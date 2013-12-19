@@ -35,8 +35,10 @@ shinyServer(function(input, output, session, clientData) {
     merged.data <- rbind(ozone.data, data.w)
     
     # subset the data based on the years the user has selected
+    ozone.data <- subset(ozone.data, date >= as.numeric(paste0(input$years[1], "0101")) &
+                            date <= as.numeric(paste0(input$years[2], "1231")))
     merged.data <- subset(merged.data, date >= as.numeric(paste0(input$years[1], "0101")) &
-                        date <= as.numeric(paste0(input$years[2], "1231")))
+                            date <= as.numeric(paste0(input$years[2], "1231")))
     
     # create the appropriate monitor label
     if(input$monitor=="harding") {monitor <- "Harding St. Monitor"} else
