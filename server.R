@@ -12,11 +12,10 @@ load("ozone.rda")
 # load the weather data, a dataframe labeled "data.w"
 load("weather.rda")
 
-# Create a labels for the weather variables
+# Create labels for the weather variables
 labels <- c("Max Temp (degrees F)","Max Barometric Pressure(mb)", "Max Humidity(%)")
-#"East 16th St. Monitor", "Harding St. Monitor", "Ft. Harrison Monitor", 
 
-#--Define colours for raw & smoothed data:
+#--Define colours for the time series plot:
 col.raw <- "#377EB8"  #colset[2] } see note above
 col.smooth <- "#E41A1C"  #colset[1] }
 col.lm <- "grey20"
@@ -25,7 +24,7 @@ col.lm <- "grey20"
 
 shinyServer(function(input, output, session, clientData) {
   
-  # Reactive function for selecting the data
+  # Reactive function for selecting the data in long format
   getLongData <- reactive({
     
     # get ozone data for user-selected monitor
@@ -43,15 +42,18 @@ shinyServer(function(input, output, session, clientData) {
     # create the appropriate monitor label
     if(input$monitor=="harding") {monitor <- "Harding St. Monitor"} else
       if(input$monitor=="east.16th") {monitor <- "E. 16th St. Monitor"} else
-        if(input$monitor=="ft.harrison") {monitor <- "Ft. Harrison Monitor"}
+        if(input$monitor=="ft.harison") {monitor <- "Ft. Harrison Monitor"}
     
     # return a list of two data frames
     return(list(merged.data, ozone.data, monitor))
   })
   
+  # Reactive function for selecting the data in wide format
   getWideData <- reactive({
+    # get the data in long format
     long.data <- getLongData()[[1]]
     
+    # reshape into wide format
     wide.data <- dcast(long.data, date + j.day + month + year + warm.season ~ variable, value.var="value")
     
     # subset data down to the warm ("ozone") season
@@ -66,7 +68,7 @@ shinyServer(function(input, output, session, clientData) {
   output$timeplot <- renderPlot({
     
     
-    # get the merged data from the reactive function (the first element of a list)
+    # get the merged data from the first reactive function (the first element of a list)
     data <- getLongData()[[1]]
     
     # get monitor label
@@ -75,14 +77,13 @@ shinyServer(function(input, output, session, clientData) {
     # attach labels to the variables
     data[, "variable"] <- factor(data[, "variable"], labels = c(monitor, labels))
     
-    # create basic ggplot
+    # create basic ggplot2 plot
     plot <- ggplot(data, aes(x=as.Date(as.character(date), format="%Y%m%d"),
                                y=value, group=variable))
     
     # add facet_wrap to ggplot and print
     print(plot + facet_wrap( ~ variable, ncol=1, scale="free_y") + geom_line(color=col.raw) +
             stat_smooth(color=col.smooth) + xlab("Time") + 
-            #ggtitle(paste0("Asthma ED Patients, ", names(main.title))) +
             theme(strip.text = element_text(size=12, face="bold"),
                   axis.title.x = element_text(face="bold", size=14),
                   axis.text.x  = element_text(size=12),
@@ -92,14 +93,16 @@ shinyServer(function(input, output, session, clientData) {
   })
   
     
+  # Box plot
   output$boxplot <- renderPlot({
     
-    # get the ozone data from the reactive function (the second element of a list)
+    # get the ozone data from the first reactive function (the second element of a list)
     data <- getLongData()[[2]]
     
     # get the title for the graph from the name of the monitor variable
     title <- getLongData()[[3]]
     
+    # print the quick plot from the ggplot2 package
     print(qplot(year, value, data=data, geom=c("boxplot", "jitter"), 
           fill=year, main=title,
           xlab="", ylab="Ozone Concentration (ppm)"))
@@ -108,7 +111,7 @@ shinyServer(function(input, output, session, clientData) {
   # Scatter plot of selected monitor data
   output$scatterplot <- renderPlot({
     
-    # get the merged data from the reactive function (the first element of a list)
+    # get the merged data from the second reactive function
     data <- getWideData()
     
     # rename the monitor column as ozone
@@ -117,7 +120,7 @@ shinyServer(function(input, output, session, clientData) {
     # get monitor label
     monitor <- getLongData()[[3]]
     
-    # plot the paired variables
+    # plot the paired variables using ggpairs function from the GGally package
     print(ggpairs(na.omit(data[, c(4, 6:9)]), color='year', title=monitor))
     
   },  height=function() { session$clientData$output_scatterplot_width * 0.7 })

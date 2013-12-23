@@ -6,7 +6,7 @@ shinyUI(pageWithSidebar(
   # Application title
   headerPanel("Indianapolis 8 Hr. Ozone and Weather Data"),
   
-  # Sidebar with controls to select years and three parameters
+  # Sidebar with controls to select years and monitor
   sidebarPanel(
     
     sliderInput("years", "Years:",
@@ -15,11 +15,12 @@ shinyUI(pageWithSidebar(
     selectInput("monitor", "Monitor:",
                 list("Harding St." = "harding",
                      "E. 16th St." = "east.16th",
-                     "Ft. Harrison" = "ft.harrison"))
+                     "Ft. Harrison" = "ft.harison"))
     
     
 ),
   
+  # Main panel with tabs
   mainPanel(
     tabsetPanel(
       tabPanel("Time Series Plot", plotOutput("timeplot")),
